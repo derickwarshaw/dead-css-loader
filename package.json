@@ -1,5 +1,5 @@
 {
-  "name": "webpack-dead-css-modules",
+  "name": "webpack-dead-css",
   "version": "0.1.0",
   "description": "Remove unused css from modules loaded with css-loader",
   "author": {
