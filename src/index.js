@@ -3,7 +3,7 @@ const babel = require("babel-core");
 const cssLoader = require.resolve("css-loader");
 const path = require("path");
 const postcss = require("postcss");
-const deadcss = require("postcss-dead-css");
+const deadcss = require("postcss-modules-dead-css");
 const _ = require("lodash");
 
 class DeadCSSPlugin {
