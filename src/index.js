@@ -1,6 +1,5 @@
 const vm = require("vm");
 const babel = require("babel-core");
-const cssLoader = require.resolve("css-loader");
 const path = require("path");
 const postcss = require("postcss");
 const deadcss = require("postcss-modules-dead-css");
@@ -44,8 +43,9 @@ class DeadCSSPlugin {
     }
 
     filterModules(module) {
-        return module.loaders && module.loaders[0] &&
-            module.loaders[0].loader === cssLoader;
+        return !module.error && module.loaders && module.loaders[0] &&
+			typeof (module.loaders[0].loader) === "string" &&
+			module.loaders[0].loader.includes("/css-loader/")
     }
 
     compileRequire(context){
