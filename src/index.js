@@ -41,7 +41,7 @@ class DeadCSSPlugin {
             modules[module.id]._source._value = module.source;
         });
     }
-
+t
     filterModules(module) {
         return !module.error && module.loaders && module.loaders[0] &&
 			typeof (module.loaders[0].loader) === "string" &&
@@ -93,8 +93,6 @@ class DeadCSSPlugin {
             this.lastError = e;
             return false;
         }
-        delete m.exports.toString;
-        delete m.exports.i;
 
         this.compiledById[module.index] = this.compiledModules[name] = m.exports;
         return true;
