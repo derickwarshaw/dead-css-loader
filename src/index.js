@@ -41,7 +41,7 @@ class DeadCSSPlugin {
             modules[module.id]._source._value = module.source;
         });
     }
-t
+
     filterModules(module) {
         return !module.error && module.loaders && module.loaders[0] &&
 			typeof (module.loaders[0].loader) === "string" &&
@@ -63,13 +63,14 @@ t
         let compiled;
         let loop = 0;
         do {
+            if (++loop == 100) {
+                throw this.lastError;
+            }
+
             compiled = true;
             this.lastError = false;
             for (let i = 0; i < modules.length; i++) {
                 compiled &= this.compileModule(modules[i]);
-            }
-            if (loop++ == 100) {
-                throw this.lastError;
             }
         } while (!compiled);
     }
