@@ -8,6 +8,8 @@ See a demo at [webpack-dead-css-demo](https://github.com/simlrh/webpack-dead-css
 
 ## Usage
 
+See [postcss-modules-dead-css](https://github.com/simlrh/postcss-modules-dead-css) for the meaning of the plugin options.
+
 ```js
 module.exports = {
   module: {
@@ -18,8 +20,8 @@ module.exports = {
           {
             loader: "babel-loader",
             query: {
-				// Enables tree-shaking
-				"presets": [ ["es2015", { "modules": false }] ]
+              // Enables tree-shaking
+              "presets": [ ["es2015", { "modules": false }] ]
             }
           }
         ]
@@ -41,7 +43,12 @@ module.exports = {
     ]
   },
   plugins: [
-    new DeadCSSPlugin(),
+    new DeadCSSPlugin({
+      ignore: ['ignoredClass'],
+      allowIds: false,
+      allowNonClassCombinators: false,
+      allowNonClassSelectors: false
+    }),
   ]
 };
 ```
