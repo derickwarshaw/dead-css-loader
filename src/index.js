@@ -4,6 +4,7 @@ const path = require("path");
 const postcss = require("postcss");
 const deadcss = require("postcss-modules-dead-css");
 const _ = require("lodash");
+const webpackSources = require("webpack-sources");
 
 class DeadCSSPlugin {
 
@@ -12,6 +13,7 @@ class DeadCSSPlugin {
         this.compiledById = [];
 
         this.options = {
+            filename: false,
             ignore: [],
             allowIds: false,
             allowNonClassSelectors: false,
@@ -23,29 +25,95 @@ class DeadCSSPlugin {
     }
 
     apply(compiler) {
-        const run = this.run.bind(this);
+        const plugin = this;
         compiler.plugin("compilation", function(compilation) {
-            compilation.plugin("after-optimize-modules", run);
+            compilation.plugin("after-optimize-modules", plugin.run.bind(plugin));
+            if (plugin.options.filename) {
+                compilation.plugin("after-optimize-chunk-assets", plugin.runExtractedText(compilation).bind(plugin));
+            }
         });
     }
 
     run(modules) {
-        let cssModules = modules.filter(this.filterModules);
+        let cssModules = modules.filter(this.filterModules, this);
 
         this.compileModules(cssModules);
 
-        cssModules = cssModules.map(this.filterCss, this);
+        if (!this.options.filename) {
+            cssModules = cssModules.map(this.filterModuleCss, this);
 
-        // Apply filtered css to the final modules array
-        cssModules.map(function(module) {
-            modules[module.id]._source._value = module.source;
-        });
+            // Apply filtered css to the final modules array
+            cssModules.map(function(module) {
+                modules[module.id]._source = new webpackSources.OriginalSource(
+                    module.source, 
+                    modules[module.id]._source._name
+                );
+            });
+        }
+    }
+
+    runExtractedText(compilation) {
+        return (chunks) => {
+            const filename = this.options.filename;
+            if (compilation.assets[filename]) {
+                const modules = compilation.modules.filter(this.filterModules, this);
+
+                const args = { usedSelectors: [], ignore: [] };
+                modules.map((module) => {
+                    args.usedSelectors = _.concat(
+                        args.usedSelectors, 
+                        this.getModuleUsedSelectors(module)
+                    );
+                    args.ignore = _.concat(
+                        args.ignore, 
+                        this.getModuleIgnoredSelectors(module)
+                    );
+                }, this);
+
+                const source = compilation.assets[filename].source();
+                const sourceMap = this.cleanMap(compilation.assets[filename].map());
+                const usedSelectors = _.uniq(args.usedSelectors);
+                const ignore = _.uniq(args.ignore);
+
+                const result = this.filterCss(source, sourceMap, usedSelectors, ignore);
+
+                if(sourceMap && result.map) {
+                    const map = this.cleanMap(result.map.toJSON());
+                    compilation.assets[filename] = new webpackSources.SourceMapSource(result.css, filename, map);
+                } else {
+                    compilation.assets[filename] = new webpackSources.OriginalSource(result.css, filename);
+                }
+
+            }
+        };
+    }
+
+    cleanMap(map) {
+        if (map.sources) {
+            map.sources = map.sources.map((url) => url.split("://").pop());
+        }
+        return map;
     }
 
     filterModules(module) {
-        return !module.error && module.loaders && module.loaders[0] &&
-			typeof (module.loaders[0].loader) === "string" &&
-			module.loaders[0].loader.includes("/css-loader/")
+        if (module.error || !module.loaders) return false;
+
+        if (this.options.filename) {
+            const extractText = module.loaders[0] &&
+                typeof (module.loaders[0].loader) === "string" &&
+                module.loaders[0].loader.includes("/extract-text-webpack-plugin/");
+
+            let cssLoader = false;
+            for (let i = 1; i < module.loaders.length; i++) {
+                cssLoader |= module.loaders[i].loader.includes("/css-loader/");
+            }
+
+            return extractText && cssLoader;
+        }
+
+        return module.loaders[0] &&
+            typeof (module.loaders[0].loader) === "string" &&
+            module.loaders[0].loader.includes("/css-loader/");
     }
 
     compileRequire(context){
@@ -81,14 +149,14 @@ class DeadCSSPlugin {
 
         if (this.compiledModules.hasOwnProperty(name)) return true;
 
-        const source = module._source._value;
+        const source = module._source.source();
 
+        const m = { exports: {}, id: module.index };
         try {
-            var result = babel.transform(source, {
+            const result = babel.transform(source, {
                 presets: ['es2015']
             });
-            var fn = vm.runInThisContext("(function(module, exports, require) {" + result.code + "\n})", "module.js");
-            var m = { exports: {}, id: module.index };
+            const fn = vm.runInThisContext("(function(module, exports, require) {" + result.code + "\n})", "module.js");
             fn(m, m.exports, this.compileRequire(module.context).bind(this));
         } catch(e) {
             this.lastError = e;
@@ -99,66 +167,80 @@ class DeadCSSPlugin {
         return true;
     }
 
-    // Filter dead css and contruct new $css object
-    filterCss(module) {
+    getModuleUsedSelectors(module) {
         const exports = this.compiledById[module.index];
+        const usedExports = module.usedExports;
 
-        // all selectors used, return original source
-        if (module.usedExports.indexOf('default') !== -1) {
-            return {
-                id: module.index,
-                source: module._source._value
-            };
-        }
-
-        const usedSelectors = _.flatten(module.usedExports
+        return _.flatten(usedExports
             .filter((selector) => selector !== "$css")
             .map((selector) => exports[selector].split(" ")));
-        const ignore = this.options.ignore.map((sel) => exports[sel]);
+    }
 
-        const result = postcss([
+    getModuleIgnoredSelectors(module) {
+        const exports = this.compiledById[module.index];
+        return this.options.ignore.map((sel) => {
+            return exports[sel] ? exports[sel] : sel;
+        });
+    }
+
+    filterCss(source, sourceMap, usedSelectors, ignore) {
+        return postcss([
             deadcss({
                 used: usedSelectors,
-                ignore
+                ignore: ignore,
+                allowIds: this.options.allowIds,
+                allowNonClassSelectors: this.options.allowNonClassSelectors,
+                allowNonClassCombinators: this.options.allowNonClassCombinators
             })
-        ]).process(exports.$css.content, {
-            from: exports.$css.file,
+        ]).process(source, {
+            from: sourceMap ? sourceMap.file : undefined,
             to: module.request,
             map: {
-                prev: exports.$css.sourceMap,
+                prev: sourceMap,
                 sourcesContent: true,
                 inline: false,
                 annotation: false
             }
         });
+    }
 
-        let map;
-
-        if(exports.$css.sourceMap && result.map) {
-            map = result.map.toJSON();
-            if(map.sources) {
-                map.sources = map.sources.map(function(source) {
-                    return '/.' + source.split('://').pop();
-                }, this);
-                map.sourceRoot = "webpack://";
+    // Filter dead css and contruct new $css object
+    filterModuleCss(module) {
+        if (module.usedExports === true || module.usedExports.indexOf('default') !== -1) {
+            return {
+                id: module.id,
+                source: module._source.source()
             }
-            map = JSON.stringify(map);
         }
 
+        const usedSelectors = this.getModuleUsedSelectors(module);
+        const ignore = this.getModuleIgnoredSelectors(module);
+        const exports = this.compiledById[module.index];
+        const source = exports.$css.content;
+        const sourceMap = exports.$css.sourceMap;
+
+        const result = this.filterCss(source, sourceMap, usedSelectors, ignore);
+
         const cssAsString = JSON.stringify(result.css);
+
+        let map = "";
+        if(sourceMap && result.map) {
+            map = this.cleanMap(result.map.toJSON());
+        }
+        map = JSON.stringify(map);
 
         module.$css = "export const $css = {\n" +
             "\t id: module.id,\n" +
             "\t content: " +  cssAsString + ",\n" + 
             "\t imports: cssImports" +
-            (exports.$css.sourceMap && result.map ? ",\n\t sourceMap: " + map : "") + 
+            (sourceMap && result.map ? ",\n\t sourceMap: " + map : "") + 
             "\n}";
 
         const r = /\/\/ module\n[^]*\/\/ exports\n/;
 
         return {
             id: module.index,
-            source: module._source._value.replace(r, this.replace(module.$css))
+            source: module._source.source().replace(r, this.replace(module.$css))
         }
     }
 
