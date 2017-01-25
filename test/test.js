@@ -1,6 +1,7 @@
 const should = require("should");
 const sinon = require("sinon");
 const Plugin = require("./../src/index");
+const Source = require("webpack-sources").OriginalSource;
 
 describe("DeadCSSPlugin", () => {
 	it("should initialise with default options", () => {
@@ -8,6 +9,7 @@ describe("DeadCSSPlugin", () => {
 		should.exist(plugin.options);
 		plugin.options.should.eql({
 			ignore: [],
+			filename: false,
 			allowIds: false,
 			allowNonClassSelectors: false,
 			allowNonClassCombinators: false
@@ -53,7 +55,7 @@ describe("DeadCSSPlugin", () => {
 			{ error: true, loaders: [{loader:"/path/to/css-loader/index.js"}]},
 			{ loaders: [{loader:"/path/to/css-loader/index.js"}]}
 		];
-		const result = modules.filter(plugin.filterModules);
+		const result = modules.filter(plugin.filterModules, plugin);
 		result.should.be.eql([
 			{ loaders: [{loader:"/path/to/css-loader/index.js"}]}
 		]);
@@ -90,7 +92,7 @@ describe("DeadCSSPlugin", () => {
 			]);
 		} catch(e) {
 		}
-		plugin.compileModule.callCount.should.be.exactly(100);
+		plugin.compileModule.callCount.should.be.exactly(3);
 		plugin.compileModules.threw().should.be.exactly(true);
 		should.exist(plugin.compileModules.exceptions[1]);
 	});
@@ -100,10 +102,7 @@ describe("DeadCSSPlugin", () => {
 
 		plugin.compileModule({
 			context: "./",
-			_source: {
-				_name: "module1",
-				_value: "export default { name: 'module1' };"
-			}
+			_source: new Source("export default { name: 'module1' };", "module1")
 		}).should.be.exactly(true);
 
 		plugin.compiledModules.should.be.eql({
@@ -116,17 +115,11 @@ describe("DeadCSSPlugin", () => {
 
 		plugin.compileModule({
 			context: "./",
-			_source: {
-				_name: "module1",
-				_value: "export default { name: 'module1' };"
-			}
+			_source: new Source("export default { name: 'module1' };", "module1")
 		});
 		plugin.compileModule({
 			context: "./",
-			_source: {
-				_name: "module2",
-				_value: "import Module1 from './module1'; export default Module1.name;"
-			}
+			_source: new Source("import Module1 from './module1'; export default Module1.name;", "module2")
 		}).should.be.exactly(true);
 
 		plugin.compiledModules.should.be.eql({
@@ -139,10 +132,7 @@ describe("DeadCSSPlugin", () => {
 		const plugin = new Plugin();
 
 		plugin.compileModule({
-			_source: { 
-				_name: "module1",
-				_value: "load of gibberish"
-			}
+			_source: new Source("load of gibberish", "module1")
 		}).should.be.exactly(false);
 
 		plugin.compiledModules.should.be.eql({});
@@ -168,9 +158,7 @@ describe("DeadCSSPlugin", () => {
 				loaders: [
 					{ loader: '/css-loader/' }
 				],
-				_source: {
-					_name: "module1",
-					_value: "const cssImports = [];\n" +
+				_source: new Source("const cssImports = [];\n" +
 					"// module\n" + 
 					"export const $css = {\n" +
 					"\t id: module.id,\n" +
@@ -179,8 +167,9 @@ describe("DeadCSSPlugin", () => {
 					"};\n" +
 					"// exports\n" +
 					"export const usedClass = 'usedClass';\n" +
-					"export const unusedClass = 'unusedClass';\n"
-				}	
+					"export const unusedClass = 'unusedClass';\n",
+					"module1"
+				)
 			}
 		]
 		plugin.run(modules);

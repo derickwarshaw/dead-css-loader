@@ -24,6 +24,7 @@
   "devDependencies": {
     "mocha": "^3.2.0",
     "should": "^11.1.2",
-    "sinon": "^1.17.7"
+    "sinon": "^1.17.7",
+    "webpack-sources": "^0.1.4"
   }
 }

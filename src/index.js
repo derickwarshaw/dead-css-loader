@@ -131,7 +131,7 @@ class DeadCSSPlugin {
         let compiled;
         let loop = 0;
         do {
-            if (++loop == 100) {
+            if (loop++ > modules.length) {
                 throw this.lastError;
             }
 
