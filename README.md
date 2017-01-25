@@ -1,4 +1,4 @@
-# webpack-dead-css
+# webpack-dead-css [![Build Status](https://travis-ci.org/simlrh/webpack-dead-css.svg?branch=master)](https://travis-ci.org/simlrh/webpack-dead-css)
 
 A webpack plugin for removing unused CSS Modules code. Requires [this fork](https://github.com/simlrh/css-loader/tree/es6) of css-loader and [this fork](https://github.com/simlrh/style-loader/tree/es6) of style-loader.
 
