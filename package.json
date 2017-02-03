@@ -2,6 +2,10 @@
   "name": "dead-css-loader",
   "version": "1.0.0",
   "description": "Remove unused css from css modules",
+  "repository" : { 
+    "type" : "git", 
+    "url" : "https://github.com/simlrh/dead-css-loader.git"
+  },
   "author": {
     "name": "Steve Le Roy Harris",
     "email": "steve@nourish.je",
@@ -9,11 +13,13 @@
   },
   "main": "src/index.js",
   "scripts": {
-    "test": "npm run lint && mocha",
+    "test": "mocha && npm run lint",
     "lint": "eslint src test"
   },
   "license": "MIT",
   "dependencies": {
+    "babel-core": "^6.22.1",
+    "babel-preset-es2015": "^6.22.0",
     "loader-utils": "^0.2.16",
     "lodash": "^4.17.4",
     "postcss": "^5.2.11",
@@ -22,10 +28,10 @@
     "webpack-sources": "^0.1.4"
   },
   "devDependencies": {
+    "css-loader": "git://github.com/simlrh/css-loader.git#es6",
     "eslint": "^3.14.1",
     "mocha": "^3.2.0",
     "should": "^11.1.2",
-    "sinon": "^1.17.7",
-    "webpack-sources": "^0.1.4"
+    "sinon": "^1.17.7"
   }
 }
