@@ -33,5 +33,10 @@
     "mocha": "^3.2.0",
     "should": "^11.1.2",
     "sinon": "^1.17.7"
+  },
+  "peerDependencies": {
+    "css-loader": "https://github.com/simlrh/css-loader.git#es6",
+    "style-loader": "https://github.com/simlrh/style-loader.git#es6",
+    "extract-text-webpack-plugin": "https://github.com/simlrh/extract-text-webpack-plugin.git#es6"
   }
 }
