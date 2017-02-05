@@ -28,14 +28,14 @@
     "webpack-sources": "^0.1.4"
   },
   "devDependencies": {
-    "css-loader": "https://github.com/simlrh/css-loader#es6",
+    "css-loader": "https://github.com/simlrh/css-loader",
     "eslint": "^3.14.1",
     "mocha": "^3.2.0",
     "should": "^11.1.2",
     "sinon": "^1.17.7"
   },
   "peerDependencies": {
-    "css-loader": "https://github.com/simlrh/css-loader#es6",
+    "css-loader": "https://github.com/simlrh/css-loader",
     "style-loader": "https://github.com/simlrh/style-loader#es6",
     "extract-text-webpack-plugin": "https://github.com/simlrh/extract-text-webpack-plugin#es6"
   }
