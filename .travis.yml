@@ -1,4 +1,6 @@
 language: node_js
 node_js:
   - "node"
-install: npm install --force
+install: 
+  - npm clear cache -g
+  - npm install
