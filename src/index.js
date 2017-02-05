@@ -20,6 +20,7 @@ class DeadCSSLoader {
     constructor(compilation, query) {
         this.options = {
             plugins: false,
+            spinalCase: false,
             ignore: [],
             allowIds: false,
             allowNonClassSelectors: false,
