@@ -1,4 +1,4 @@
-# dead-css-loader [![Build Status](https://travis-ci.org/simlrh/dead-css-loader.svg?branch=master)](https://travis-ci.org/simlrh/dead-css-loader) [![Donate](https://nourish.je/assets/images/Donate-Buy%20me%20a%20coffee-brightgreen.svg)](http://ko-fi.com/A250KJT)
+# dead-css-loader [![Build Status](https://travis-ci.org/simlrh/dead-css-loader.svg?branch=master)](https://travis-ci.org/simlrh/dead-css-loader) [![Donate](https://nourish.je/assets/images/donate.svg)](http://ko-fi.com/A250KJT)
 
 A webpack loader that removes unused CSS Modules code. Requires [this fork](https://github.com/simlrh/css-loader/tree/es6) of css-loader and [this fork](https://github.com/simlrh/style-loader/tree/es6) of style-loader. To use with extract-text-webpack-plugin you need [this fork](https://github.com/simlrh/extract-text-webpack-plugin/tree/es6).
 
