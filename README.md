@@ -4,7 +4,7 @@ A webpack loader that removes unused CSS Modules code. Requires [this fork](http
 
 The loader runs a child compilation and uses webpack 2's tree shaking to determine which CSS Modules classnames have been used in a project, then removes any rulesets for unused classnames from the CSS before passing to the css-loader.
 
-See a demo at [webpack-dead-css-demo](https://github.com/simlrh/webpack-dead-css-demo).
+See a demo at [dead-css-loader-demo](https://github.com/simlrh/dead-css-loader-demo).
 
 ## Usage
 
